@@ -12,13 +12,13 @@ RogueRota.f:SetScript("OnEvent", function(self, event)
     RogueRota.Energy = UnitMana("player")
 end)
 
--- Spell Names
-RogueRota.name = {
-    [1] = "Slice and Dice",
-    [2] = "Adrenaline Rush",
-    [3] = "Sinister Strike",
-    [4] = "Eviscerate",
-    [5] = "Blade Flurry"
+-- Spells
+RogueRota.spells = {
+    SliceAndDice = "Slice and Dice",
+    AdrenalineRush = "Adrenaline Rush",
+    SinisterStrike = "Sinister Strike",
+    Eviscerate = "Eviscerate",
+    BladeFlurry = "Blade Flurry"
 }
 
 -- Local Variables
@@ -52,44 +52,47 @@ function RogueRota:IsActive(name)
 end
 
 -- Function to handle the rotation
-function RogueRota:MaxDps()
+function RogueRota:Rota()
     if (not UnitIsPlayer("target")) then
-        local active, timeLeft = RogueRota:IsActive(RogueRota.name[1]) -- Slice and Dice
-        local Aactive, AtimeLeft = RogueRota:IsActive(RogueRota.name[2]) -- Adrenaline Rush
-        local Bactive, BtimeLeft = RogueRota:IsActive(RogueRota.name[5]) -- Blade Flurry
+        local active, timeLeft = RogueRota:IsActive(RogueRota.spells.SliceAndDice) -- Slice and Dice
+        local Aactive, AtimeLeft = RogueRota:IsActive(RogueRota.spells.AdrenalineRush) -- Adrenaline Rush
+        local Bactive, BtimeLeft = RogueRota:IsActive(RogueRota.spells.BladeFlurry) -- Blade Flurry
         local cP = GetComboPoints("player")
         local energy = UnitMana("player")
 
         -- Maintain Slice and Dice as soon as there is at least 1 combo point
         if cP >= 1 and (not active or timeLeft < 2) then
-            CastSpellByName(RogueRota.name[1]) -- Slice and Dice
+            CastSpellByName(RogueRota.spells.SliceAndDice) -- Slice and Dice
             return
         end
 
         -- Use Sinister Strike to generate combo points
         if cP < 5 and energy >= 40 then
-            CastSpellByName(RogueRota.name[3]) -- Sinister Strike
+            CastSpellByName(RogueRota.spells.SinisterStrike) -- Sinister Strike
             return
         end
 
         -- Use Eviscerate as finisher if Slice and Dice is active
         if active and cP >= 5 then
-            CastSpellByName(RogueRota.name[4]) -- Eviscerate
+            CastSpellByName(RogueRota.spells.Eviscerate) -- Eviscerate
             return
         end
 
         -- Use Adrenaline Rush and Blade Flurry initially together
-        if not Aactive and not Bactive then
-            CastSpellByName(RogueRota.name[2]) -- Adrenaline Rush
-            CastSpellByName(RogueRota.name[5]) -- Blade Flurry
+        local ARCDStart, ARCDDuration = GetSpellCooldown(RogueRota.spells.AdrenalineRush, "BOOKTYPE_SPELL")
+        local BFCDStart, BFCDDuration = GetSpellCooldown(RogueRota.spells.BladeFlurry, "BOOKTYPE_SPELL")
+        local ARCD = ARCDStart + ARCDDuration - GetTime()
+        local BFCD = BFCDStart + BFCDDuration - GetTime()
+        
+        if ARCD == 0 and BFCD == 0 then
+            CastSpellByName(RogueRota.spells.AdrenalineRush) -- Adrenaline Rush
+            CastSpellByName(RogueRota.spells.BladeFlurry) -- Blade Flurry
             return
         end
 
         -- Use Blade Flurry again after 2 minutes, while Adrenaline Rush is still on cooldown
-        local ACD = GetSpellCooldown(RogueRota.name[2])
-        local BCD = GetSpellCooldown(RogueRota.name[5])
-        if ACD > 0 and BCD == 0 then
-            CastSpellByName(RogueRota.name[5]) -- Blade Flurry
+        if ARCD > 0 and BFCD == 0 then
+            CastSpellByName(RogueRota.spells.BladeFlurry) -- Blade Flurry
             return
         end
     end
