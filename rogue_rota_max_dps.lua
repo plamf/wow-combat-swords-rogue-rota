@@ -60,14 +60,15 @@ function RogueRota:MaxDps()
         local comboPoints = GetComboPoints("player")
         local energy = UnitMana("player")
 
-        -- Start attacking the target
-        if not IsCurrentAction(72) then -- Check if auto-attack is active (72 is the action slot for auto-attack)
-            CastSpellByName("Attack")
+        -- Maintain Slice and Dice if there are 3 or fewer combo points
+        if comboPoints >= 1 and comboPoints <= 3 and (not sliceActive or sliceTimeLeft < 2) then
+            CastSpellByName(RogueRota.spells.SliceAndDice)
+            return
         end
 
-        -- Maintain Slice and Dice
-        if comboPoints >= 1 and (not sliceActive or sliceTimeLeft < 2) then
-            CastSpellByName(RogueRota.spells.SliceAndDice)
+        -- Use Eviscerate as finisher if there are 5 combo points
+        if comboPoints >= 5 then
+            CastSpellByName(RogueRota.spells.Eviscerate)
             return
         end
 
@@ -77,22 +78,15 @@ function RogueRota:MaxDps()
             return
         end
 
-        -- Use Eviscerate as finisher if Slice and Dice is active
-        if sliceActive and comboPoints >= 5 then
-            CastSpellByName(RogueRota.spells.Eviscerate)
-            return
-        end
-
         -- Use Adrenaline Rush when it is not active
         if not adrenalineActive then
             CastSpellByName(RogueRota.spells.AdrenalineRush)
-            return
+            CastSpellByName(RogueRota.spells.BladeFlurry)
         end
 
         -- Use Blade Flurry when it is not active
         if not bladeFlurryActive then
             CastSpellByName(RogueRota.spells.BladeFlurry)
-            return
         end
     end
 end
